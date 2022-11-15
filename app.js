@@ -5,11 +5,43 @@ const cors = require("cors");
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs/promises");
+const ws = require("ws");
+const wsServer = new ws.Server({ port: 5000 });
+const { Server } = require("socket.io");
+const { createServer } = require("http");
+
+const httpServer = createServer();
+
+const io = new Server(httpServer, {
+  cors: {
+    origin: "*",
+  },
+});
+
+io.on("connection", (socket) => {
+  console.log("New frontend connection");
+});
+httpServer.listen(6000);
+
+const sockets = [];
+
+wsServer.on("connection", (socket) => {
+  sockets.push(socket);
+  console.log("New frontend connection");
+  setTimeout(() => {
+    socket.send("Welcome to web-socket server");
+  }, 3000);
+
+  sockets.forEach((item) => {
+    if (item !== socket) {
+      item.send("New member connect");
+    }
+  });
+});
 
 const tempDir = path.join(__dirname, "temp");
 const contactsDir = path.join(__dirname, "public", "avatars");
-console.log(tempDir);
-console.log(contactsDir);
+
 const multerConfig = multer.diskStorage({
   destination: (req, res, cb) => {
     cb(null, tempDir);
